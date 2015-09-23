@@ -15,7 +15,10 @@ import backtype.storm.tuple.Values;
 public class FileReaderSpout implements IRichSpout {
   private SpoutOutputCollector _collector;
   private TopologyContext context;
-
+  /* TODO */
+  private FileReader fileReader;
+  private boolean completed = false;
+  /* End of TODO */
 
   @Override
   public void open(Map conf, TopologyContext context,
@@ -27,6 +30,12 @@ public class FileReaderSpout implements IRichSpout {
 
 
     ------------------------------------------------- */
+    try {
+      this.fileReader = new FileReader(conf.get("inputFile").toString());
+    } catch (FileNotFoundException e) {
+      throw new RuntimeException("Error reading file " + conf.get("inputFile"));
+    }
+    /* End of TODO */
 
     this.context = context;
     this._collector = collector;
@@ -42,7 +51,27 @@ public class FileReaderSpout implements IRichSpout {
     2. don't forget to sleep when the file is entirely read to prevent a busy-loop
 
     ------------------------------------------------- */
+    if (completed) {
+      try {
+        Thread.sleep(100);
+      } catch (InterruptedException e) {
 
+      }
+    }
+    String str;
+    BufferedReader reader = new BufferedReader(this.fileReader);
+    try {
+      while ((str = reader.readLine()) != null) {
+        str = str.trim();
+        if (str.equals("")) continue;
+        this._collector.emit(new Values(str), str);
+      }
+    } catch (Exception e) {
+      throw new RuntimeException("Error reading typle", e);
+    } finally {
+      completed = true;
+    }
+    /* End of TODO */
 
   }
 
@@ -61,7 +90,12 @@ public class FileReaderSpout implements IRichSpout {
 
 
     ------------------------------------------------- */
-
+    try {
+      this.fileReader.close();
+    } catch (IOException e) {
+      e.printStackTrace();
+    }
+    /* End of TODO */
   }
 
 
